@@ -1,0 +1,343 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --play-color: #5C6BC0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #1a1a2e;
+  color: #fff;
+}
+
+/* ── Screens ── */
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.screen.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Home screen ── */
+#screen-home {
+  background: #1a1a2e;
+  overflow-y: auto;
+  padding: 16px;
+  align-items: stretch;
+}
+
+.app-title {
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 16px 0 12px;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+#deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+.deck-card {
+  border-radius: 18px;
+  padding: 28px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-height: 110px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deck-card:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.deck-card-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  line-height: 1.25;
+}
+
+.deck-card-count {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.75);
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+/* ── Instructions screen ── */
+#screen-instructions {
+  background: #16213e;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.instructions-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+#instructions-deck-name {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.instructions-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.instructions-body p {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.85);
+}
+
+/* ── Buttons ── */
+.btn {
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 14px 40px;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  transform: scale(0.97);
+  opacity: 0.88;
+}
+
+.btn-primary {
+  background: #E91E63;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(233,30,99,0.45);
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 2px solid rgba(255,255,255,0.35);
+}
+
+/* ── Playing screen ── */
+#screen-playing {
+  background: var(--play-color);
+  position: relative;
+  overflow: hidden;
+  align-items: stretch;
+  justify-content: center;
+}
+
+/* Force landscape on small portrait phones */
+@media (max-width: 500px) and (orientation: portrait) {
+  #screen-playing {
+    transform: rotate(90deg);
+    transform-origin: center center;
+    width: 100vh;
+    height: 100vw;
+    position: fixed;
+    top: calc((100vh - 100vw) / 2);
+    left: calc((100vw - 100vh) / 2);
+  }
+}
+
+/* Timer bar */
+#timer-bar-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: rgba(0,0,0,0.2);
+  z-index: 2;
+}
+
+#timer-bar {
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  transform-origin: left center;
+  transition: background 1s ease;
+}
+
+#timer-bar.urgent {
+  background: #FF5722;
+}
+
+/* Play meta (timer text + score) */
+#play-meta {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 2;
+}
+
+#timer-text {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+}
+
+#current-score {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: rgba(255,255,255,0.9);
+}
+
+/* Word display */
+#word-display-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 60px 24px 24px;
+}
+
+#word-display {
+  font-size: clamp(2.5rem, 10vw, 5rem);
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  word-break: break-word;
+}
+
+/* Overlay flash */
+#overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+#overlay.correct {
+  background: #4CAF50;
+  opacity: 0.88;
+}
+
+#overlay.pass {
+  background: #F44336;
+  opacity: 0.88;
+}
+
+#overlay.hide {
+  opacity: 0;
+}
+
+/* ── Results screen ── */
+#screen-results {
+  background: #1a1a2e;
+  overflow-y: auto;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 28px 20px 40px;
+}
+
+.results-inner {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#final-score {
+  font-size: 2rem;
+  font-weight: 900;
+  text-align: center;
+  color: #fff;
+}
+
+#results-list {
+  width: 100%;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#results-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+#results-list li.result-correct {
+  background: rgba(76,175,80,0.18);
+  color: #A5D6A7;
+}
+
+#results-list li.result-pass {
+  background: rgba(244,67,54,0.15);
+  color: #EF9A9A;
+}
+
+#results-list li .result-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.results-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  align-items: center;
+}
+
+.results-buttons .btn {
+  width: 100%;
+  max-width: 300px;
+}

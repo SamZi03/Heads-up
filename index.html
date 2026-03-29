@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Heads Up</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="screen-home" class="screen active">
+    <h1 class="app-title">Heads Up!</h1>
+    <div id="deck-grid"></div>
+  </div>
+
+  <div id="screen-instructions" class="screen">
+    <div class="instructions-inner">
+      <h2 id="instructions-deck-name"></h2>
+      <div class="instructions-body">
+        <p>Hold your phone to your forehead — screen facing out.</p>
+        <p>Your team gives clues. Tilt down for <strong>correct</strong>, tilt up to <strong>pass</strong>.</p>
+        <p>Get as many as you can before time runs out!</p>
+      </div>
+      <button id="btn-start" class="btn btn-primary">Start!</button>
+    </div>
+  </div>
+
+  <div id="screen-playing" class="screen">
+    <div id="overlay"></div>
+    <div id="timer-bar-wrap">
+      <div id="timer-bar"></div>
+    </div>
+    <div id="play-meta">
+      <span id="timer-text">60</span>
+      <span id="current-score">0</span>
+    </div>
+    <div id="word-display-wrap">
+      <div id="word-display"></div>
+    </div>
+  </div>
+
+  <div id="screen-results" class="screen">
+    <div class="results-inner">
+      <h2 id="final-score"></h2>
+      <ul id="results-list"></ul>
+      <div class="results-buttons">
+        <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+        <button id="btn-home" class="btn btn-secondary">Change Deck</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

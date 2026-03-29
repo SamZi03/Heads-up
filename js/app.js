@@ -1,0 +1,268 @@
+(function () {
+  const TIMER_DURATION = 60;
+  const TILT_THRESHOLD = 25;
+  const TILT_DEBOUNCE = 1200;
+
+  let state = 'home';
+  let selectedDeck = null;
+  let shuffledWords = [];
+  let wordIndex = 0;
+  let results = [];
+  let correctCount = 0;
+  let attemptCount = 0;
+  let timeLeft = TIMER_DURATION;
+  let timerInterval = null;
+  let betaBaseline = null;
+  let baselineSamples = [];
+  let baselineCaptured = false;
+  let lastTiltTime = 0;
+  let orientationHandler = null;
+
+  const screens = {
+    home: document.getElementById('screen-home'),
+    instructions: document.getElementById('screen-instructions'),
+    playing: document.getElementById('screen-playing'),
+    results: document.getElementById('screen-results'),
+  };
+
+  const deckGrid = document.getElementById('deck-grid');
+  const instructionsDeckName = document.getElementById('instructions-deck-name');
+  const btnStart = document.getElementById('btn-start');
+  const wordDisplay = document.getElementById('word-display');
+  const timerBar = document.getElementById('timer-bar');
+  const timerText = document.getElementById('timer-text');
+  const currentScore = document.getElementById('current-score');
+  const overlay = document.getElementById('overlay');
+  const finalScore = document.getElementById('final-score');
+  const resultsList = document.getElementById('results-list');
+  const btnPlayAgain = document.getElementById('btn-play-again');
+  const btnHome = document.getElementById('btn-home');
+
+  function showScreen(name) {
+    state = name;
+    Object.entries(screens).forEach(([key, el]) => {
+      el.classList.toggle('active', key === name);
+    });
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildDeckGrid() {
+    deckGrid.innerHTML = '';
+    DECKS.forEach(deck => {
+      const card = document.createElement('div');
+      card.className = 'deck-card';
+      card.style.backgroundColor = deck.color;
+      card.textContent = deck.name;
+      card.addEventListener('click', () => selectDeck(deck));
+      deckGrid.appendChild(card);
+    });
+  }
+
+  function selectDeck(deck) {
+    selectedDeck = deck;
+    instructionsDeckName.textContent = deck.name;
+    showScreen('instructions');
+  }
+
+  async function requestOrientationPermission() {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      return permission === 'granted';
+    }
+    return true;
+  }
+
+  function startGame() {
+    shuffledWords = shuffle(selectedDeck.words);
+    wordIndex = 0;
+    results = [];
+    correctCount = 0;
+    attemptCount = 0;
+    timeLeft = TIMER_DURATION;
+    betaBaseline = null;
+    baselineSamples = [];
+    baselineCaptured = false;
+    lastTiltTime = 0;
+
+    document.documentElement.style.setProperty('--play-color', selectedDeck.color);
+
+    wordDisplay.textContent = shuffledWords[wordIndex];
+    currentScore.textContent = '0';
+    updateTimerDisplay();
+
+    showScreen('playing');
+    startTimer();
+    attachOrientation();
+  }
+
+  function startTimer() {
+    const startTime = Date.now();
+    const totalMs = TIMER_DURATION * 1000;
+
+    timerInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, totalMs - elapsed);
+      timeLeft = remaining / 1000;
+
+      updateTimerDisplay();
+
+      if (remaining <= 0) {
+        endGame();
+      }
+    }, 100);
+  }
+
+  function updateTimerDisplay() {
+    const secs = Math.ceil(timeLeft);
+    timerText.textContent = secs;
+
+    const pct = (timeLeft / TIMER_DURATION) * 100;
+    timerBar.style.width = pct + '%';
+
+    let color;
+    if (pct > 50) {
+      color = '#4caf50';
+    } else if (pct > 25) {
+      color = '#ff9800';
+    } else {
+      color = '#f44336';
+    }
+    timerBar.style.backgroundColor = color;
+  }
+
+  function attachOrientation() {
+    orientationHandler = function (e) {
+      const beta = e.beta;
+      if (beta === null) return;
+
+      if (!baselineCaptured) {
+        baselineSamples.push(beta);
+        if (baselineSamples.length >= 5) {
+          betaBaseline = baselineSamples.reduce((a, b) => a + b, 0) / baselineSamples.length;
+          baselineCaptured = true;
+        }
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTiltTime < TILT_DEBOUNCE) return;
+
+      const delta = beta - betaBaseline;
+
+      if (delta < -TILT_THRESHOLD) {
+        lastTiltTime = now;
+        registerAction('correct');
+      } else if (delta > TILT_THRESHOLD) {
+        lastTiltTime = now;
+        registerAction('pass');
+      }
+    };
+    window.addEventListener('deviceorientation', orientationHandler);
+  }
+
+  function detachOrientation() {
+    if (orientationHandler) {
+      window.removeEventListener('deviceorientation', orientationHandler);
+      orientationHandler = null;
+    }
+  }
+
+  function registerAction(type) {
+    const word = shuffledWords[wordIndex];
+    results.push({word, result: type});
+    attemptCount++;
+
+    if (type === 'correct') {
+      correctCount++;
+      currentScore.textContent = correctCount;
+      flashOverlay('correct');
+      vibrate(type);
+    } else {
+      flashOverlay('pass');
+      vibrate(type);
+    }
+
+    wordIndex++;
+    if (wordIndex >= shuffledWords.length) {
+      shuffledWords = shuffle(selectedDeck.words);
+      wordIndex = 0;
+    }
+    wordDisplay.textContent = shuffledWords[wordIndex];
+  }
+
+  function flashOverlay(type) {
+    overlay.classList.remove('correct', 'pass', 'hide');
+    overlay.classList.add(type);
+    setTimeout(() => {
+      overlay.classList.add('hide');
+      setTimeout(() => {
+        overlay.classList.remove('correct', 'pass', 'hide');
+      }, 400);
+    }, 400);
+  }
+
+  function vibrate(type) {
+    try {
+      if (type === 'correct') {
+        navigator.vibrate(100);
+      } else {
+        navigator.vibrate([80, 50, 80]);
+      }
+    } catch (e) {}
+  }
+
+  function endGame() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    detachOrientation();
+    showResults();
+  }
+
+  function showResults() {
+    finalScore.textContent = correctCount + ' correct out of ' + attemptCount + ' attempts';
+
+    resultsList.innerHTML = '';
+    results.forEach(item => {
+      const li = document.createElement('li');
+      if (item.result === 'correct') {
+        li.innerHTML = '<span class="result-correct">&#10003;</span> ' + item.word;
+      } else {
+        li.innerHTML = '<span class="result-pass">&#10007;</span> ' + item.word;
+      }
+      resultsList.appendChild(li);
+    });
+
+    showScreen('results');
+  }
+
+  btnStart.addEventListener('click', async () => {
+    const granted = await requestOrientationPermission();
+    if (!granted) {
+      alert('Orientation permission is required to play.');
+      return;
+    }
+    startGame();
+  });
+
+  btnPlayAgain.addEventListener('click', () => {
+    showScreen('instructions');
+  });
+
+  btnHome.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    detachOrientation();
+    showScreen('home');
+  });
+
+  buildDeckGrid();
+})();
