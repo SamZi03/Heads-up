@@ -1,6 +1,7 @@
 (function () {
   const TIMER_DURATION = 60;
-  const TILT_THRESHOLD = 20;
+  const TILT_THRESHOLD_DOWN = 20;
+  const TILT_THRESHOLD_UP = 12;
   const TILT_DEBOUNCE = 1500;
 
   let state = 'home';
@@ -178,10 +179,10 @@
 
       const delta = beta - betaBaseline;
 
-      if (delta < -TILT_THRESHOLD) {
+      if (delta < -TILT_THRESHOLD_DOWN) {
         lastTiltTime = now;
         registerAction('correct');
-      } else if (delta > TILT_THRESHOLD) {
+      } else if (delta > TILT_THRESHOLD_UP) {
         lastTiltTime = now;
         registerAction('pass');
       }
