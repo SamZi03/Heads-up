@@ -14,12 +14,12 @@
   let timeLeft = TIMER_DURATION;
   let timerInterval = null;
   let tiltBaseline = null;
-  let baselineSamples = [];
-  let baselineCaptured = false;
   let tiltReturned = true;
   let orientationHandler = null;
   let tiltAxis = 'beta';
   let audioCtx = null;
+  let lastTiltVal = null;
+  let lastTiltTime = 0;
 
   const screens = {
     home: document.getElementById('screen-home'),
@@ -182,18 +182,26 @@
   }
 
   function attachOrientation() {
+    lastTiltVal = null;
+    lastTiltTime = 0;
     orientationHandler = function (e) {
       let val = e[tiltAxis];
       if (val === null || val === undefined) return;
       if (tiltAxis === 'gamma' && (window.screen.orientation.angle === 270 || window.orientation === -90)) val = -val;
 
+      const now = Date.now();
       const delta = val - tiltBaseline;
+      const velocity = (lastTiltVal !== null && (now - lastTiltTime) > 0)
+        ? (val - lastTiltVal) / (now - lastTiltTime) * 1000
+        : 0;
+      lastTiltVal = val;
+      lastTiltTime = now;
 
       if (tiltReturned) {
         if (delta < -TILT_THRESHOLD_DOWN) {
           tiltReturned = false;
           registerAction('correct');
-        } else if (delta > TILT_THRESHOLD_UP) {
+        } else if (delta > TILT_THRESHOLD_UP || velocity > 120) {
           tiltReturned = false;
           registerAction('pass');
         }
