@@ -231,9 +231,9 @@
   function vibrate(type) {
     try {
       if (type === 'correct') {
-        navigator.vibrate(100);
+        navigator.vibrate(300);
       } else {
-        navigator.vibrate([80, 50, 80]);
+        navigator.vibrate([200, 100, 200]);
       }
     } catch (e) {}
   }
