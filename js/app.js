@@ -1,6 +1,6 @@
 (function () {
   const TIMER_DURATION = 60;
-  const TILT_THRESHOLD = 35;
+  const TILT_THRESHOLD = 20;
   const TILT_DEBOUNCE = 1500;
 
   let state = 'home';
@@ -108,6 +108,7 @@
     let count = 5;
     wordDisplay.textContent = count;
     wordDisplay.style.fontSize = '25vw';
+    try { navigator.vibrate(80); } catch(e) {}
     const interval = setInterval(() => {
       count--;
       if (count <= 0) {
@@ -118,6 +119,7 @@
         attachOrientation();
       } else {
         wordDisplay.textContent = count;
+        try { navigator.vibrate(80); } catch(e) {}
       }
     }, 1000);
   }
