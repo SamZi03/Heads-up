@@ -40,6 +40,7 @@
   const resultsList = document.getElementById('results-list');
   const btnPlayAgain = document.getElementById('btn-play-again');
   const btnHome = document.getElementById('btn-home');
+  const btnQuit = document.getElementById('btn-quit');
 
   function showScreen(name) {
     state = name;
@@ -336,6 +337,13 @@
   });
 
   btnHome.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    detachOrientation();
+    showScreen('home');
+  });
+
+  btnQuit.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
     detachOrientation();

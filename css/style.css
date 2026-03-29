@@ -244,6 +244,23 @@ html, body {
   word-break: break-word;
 }
 
+/* Quit button */
+#btn-quit {
+  position: absolute;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  left: calc(16px + env(safe-area-inset-left));
+  background: rgba(0,0,0,0.25);
+  color: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+  z-index: 3;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Overlay flash */
 #overlay {
   position: fixed;
