@@ -1,8 +1,8 @@
 (function () {
   const TIMER_DURATION = 60;
-  const TILT_THRESHOLD_DOWN = 20;
+  const TILT_THRESHOLD_DOWN = 22;
   const TILT_THRESHOLD_UP = 12;
-  const TILT_DEBOUNCE = 1500;
+  const NEUTRAL_ZONE = 8;
 
   let state = 'home';
   let selectedDeck = null;
@@ -13,11 +13,12 @@
   let attemptCount = 0;
   let timeLeft = TIMER_DURATION;
   let timerInterval = null;
-  let betaBaseline = null;
+  let tiltBaseline = null;
   let baselineSamples = [];
   let baselineCaptured = false;
-  let lastTiltTime = 0;
+  let tiltReturned = true;
   let orientationHandler = null;
+  let tiltAxis = 'beta';
 
   const screens = {
     home: document.getElementById('screen-home'),
@@ -89,10 +90,12 @@
     correctCount = 0;
     attemptCount = 0;
     timeLeft = TIMER_DURATION;
-    betaBaseline = null;
+    tiltBaseline = null;
     baselineSamples = [];
     baselineCaptured = false;
-    lastTiltTime = 0;
+    tiltReturned = true;
+    const angle = (window.screen && window.screen.orientation) ? window.screen.orientation.angle : (window.orientation || 0);
+    tiltAxis = (Math.abs(angle) === 90) ? 'gamma' : 'beta';
 
     document.documentElement.style.setProperty('--play-color', selectedDeck.color);
 
@@ -162,29 +165,31 @@
 
   function attachOrientation() {
     orientationHandler = function (e) {
-      const beta = e.beta;
-      if (beta === null) return;
+      let val = e[tiltAxis];
+      if (val === null || val === undefined) return;
+      if (tiltAxis === 'gamma' && (window.screen.orientation.angle === 270 || window.orientation === -90)) val = -val;
 
       if (!baselineCaptured) {
-        baselineSamples.push(beta);
-        if (baselineSamples.length >= 15) {
-          betaBaseline = baselineSamples.reduce((a, b) => a + b, 0) / baselineSamples.length;
+        baselineSamples.push(val);
+        if (baselineSamples.length >= 20) {
+          tiltBaseline = baselineSamples.reduce((a, b) => a + b, 0) / baselineSamples.length;
           baselineCaptured = true;
         }
         return;
       }
 
-      const now = Date.now();
-      if (now - lastTiltTime < TILT_DEBOUNCE) return;
+      const delta = val - tiltBaseline;
 
-      const delta = beta - betaBaseline;
-
-      if (delta < -TILT_THRESHOLD_DOWN) {
-        lastTiltTime = now;
-        registerAction('correct');
-      } else if (delta > TILT_THRESHOLD_UP) {
-        lastTiltTime = now;
-        registerAction('pass');
+      if (tiltReturned) {
+        if (delta < -TILT_THRESHOLD_DOWN) {
+          tiltReturned = false;
+          registerAction('correct');
+        } else if (delta > TILT_THRESHOLD_UP) {
+          tiltReturned = false;
+          registerAction('pass');
+        }
+      } else {
+        if (Math.abs(delta) < NEUTRAL_ZONE) tiltReturned = true;
       }
     };
     window.addEventListener('deviceorientation', orientationHandler);
