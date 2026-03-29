@@ -1,7 +1,7 @@
 (function () {
   const TIMER_DURATION = 60;
-  const TILT_THRESHOLD = 25;
-  const TILT_DEBOUNCE = 1200;
+  const TILT_THRESHOLD = 35;
+  const TILT_DEBOUNCE = 1500;
 
   let state = 'home';
   let selectedDeck = null;
@@ -95,13 +95,31 @@
 
     document.documentElement.style.setProperty('--play-color', selectedDeck.color);
 
-    wordDisplay.textContent = shuffledWords[wordIndex];
     currentScore.textContent = '0';
-    updateTimerDisplay();
+    timerBar.style.width = '100%';
+    timerBar.style.backgroundColor = '#4caf50';
+    timerText.textContent = TIMER_DURATION;
 
     showScreen('playing');
-    startTimer();
-    attachOrientation();
+    startCountdown();
+  }
+
+  function startCountdown() {
+    let count = 5;
+    wordDisplay.textContent = count;
+    wordDisplay.style.fontSize = '25vw';
+    const interval = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(interval);
+        wordDisplay.style.fontSize = '';
+        wordDisplay.textContent = shuffledWords[wordIndex];
+        startTimer();
+        attachOrientation();
+      } else {
+        wordDisplay.textContent = count;
+      }
+    }, 1000);
   }
 
   function startTimer() {
@@ -146,7 +164,7 @@
 
       if (!baselineCaptured) {
         baselineSamples.push(beta);
-        if (baselineSamples.length >= 5) {
+        if (baselineSamples.length >= 15) {
           betaBaseline = baselineSamples.reduce((a, b) => a + b, 0) / baselineSamples.length;
           baselineCaptured = true;
         }
