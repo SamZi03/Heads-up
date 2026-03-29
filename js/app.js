@@ -93,8 +93,6 @@
     attemptCount = 0;
     timeLeft = TIMER_DURATION;
     tiltBaseline = null;
-    baselineSamples = [];
-    baselineCaptured = false;
     tiltReturned = true;
     const angle = (window.screen && window.screen.orientation) ? window.screen.orientation.angle : (window.orientation || 0);
     tiltAxis = (Math.abs(angle) === 90) ? 'gamma' : 'beta';
@@ -112,22 +110,40 @@
 
   function startCountdown() {
     let count = 5;
-    wordDisplay.textContent = count;
     wordDisplay.style.fontSize = '25vw';
+    wordDisplay.textContent = count;
     playTick();
     const interval = setInterval(() => {
       count--;
       if (count <= 0) {
         clearInterval(interval);
-        wordDisplay.style.fontSize = '';
-        wordDisplay.textContent = shuffledWords[wordIndex];
-        startTimer();
-        attachOrientation();
+        wordDisplay.textContent = '...';
+        calibrateBaseline();
       } else {
         wordDisplay.textContent = count;
         playTick();
       }
     }, 1000);
+  }
+
+  function calibrateBaseline() {
+    const samples = [];
+    function onOrientation(e) {
+      let val = e[tiltAxis];
+      if (val === null || val === undefined) return;
+      if (tiltAxis === 'gamma' && (window.screen.orientation.angle === 270 || window.orientation === -90)) val = -val;
+      samples.push(val);
+      if (samples.length >= 15) {
+        window.removeEventListener('deviceorientation', onOrientation);
+        tiltBaseline = samples.reduce((a, b) => a + b, 0) / samples.length;
+        tiltReturned = true;
+        wordDisplay.style.fontSize = '';
+        wordDisplay.textContent = shuffledWords[wordIndex];
+        startTimer();
+        attachOrientation();
+      }
+    }
+    window.addEventListener('deviceorientation', onOrientation);
   }
 
   function startTimer() {
@@ -170,15 +186,6 @@
       let val = e[tiltAxis];
       if (val === null || val === undefined) return;
       if (tiltAxis === 'gamma' && (window.screen.orientation.angle === 270 || window.orientation === -90)) val = -val;
-
-      if (!baselineCaptured) {
-        baselineSamples.push(val);
-        if (baselineSamples.length >= 20) {
-          tiltBaseline = baselineSamples.reduce((a, b) => a + b, 0) / baselineSamples.length;
-          baselineCaptured = true;
-        }
-        return;
-      }
 
       const delta = val - tiltBaseline;
 
