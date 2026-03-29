@@ -1,8 +1,8 @@
 (function () {
   const TIMER_DURATION = 60;
   const TILT_THRESHOLD_DOWN = 22;
-  const TILT_THRESHOLD_UP = 12;
-  const NEUTRAL_ZONE = 8;
+  const TILT_THRESHOLD_UP = 7;
+  const NEUTRAL_ZONE = 4;
 
   let state = 'home';
   let selectedDeck = null;
