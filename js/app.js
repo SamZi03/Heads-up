@@ -19,6 +19,7 @@
   let tiltReturned = true;
   let orientationHandler = null;
   let tiltAxis = 'beta';
+  let audioCtx = null;
 
   const screens = {
     home: document.getElementById('screen-home'),
@@ -112,7 +113,7 @@
     let count = 5;
     wordDisplay.textContent = count;
     wordDisplay.style.fontSize = '25vw';
-    try { navigator.vibrate(80); } catch(e) {}
+    playTick();
     const interval = setInterval(() => {
       count--;
       if (count <= 0) {
@@ -123,7 +124,7 @@
         attachOrientation();
       } else {
         wordDisplay.textContent = count;
-        try { navigator.vibrate(80); } catch(e) {}
+        playTick();
       }
     }, 1000);
   }
@@ -211,9 +212,11 @@
       correctCount++;
       currentScore.textContent = correctCount;
       flashOverlay('correct');
+      playCorrect();
       vibrate(type);
     } else {
       flashOverlay('pass');
+      playPass();
       vibrate(type);
     }
 
@@ -236,14 +239,62 @@
     }, 400);
   }
 
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playCorrect() {
+    try {
+      const ctx = audioCtx;
+      [523, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.13;
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        osc.start(t); osc.stop(t + 0.28);
+      });
+    } catch(e) {}
+  }
+
+  function playPass() {
+    try {
+      const ctx = audioCtx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(380, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(130, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35);
+    } catch(e) {}
+  }
+
+  function playTick() {
+    try {
+      const ctx = audioCtx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.07);
+    } catch(e) {}
+  }
+
   function vibrate(type) {
     try {
-      if (type === 'correct') {
-        navigator.vibrate(300);
-      } else {
-        navigator.vibrate([200, 100, 200]);
-      }
-    } catch (e) {}
+      if (type === 'correct') navigator.vibrate(300);
+      else navigator.vibrate([200, 100, 200]);
+    } catch(e) {}
   }
 
   function endGame() {
@@ -271,6 +322,7 @@
   }
 
   btnStart.addEventListener('click', async () => {
+    initAudio();
     const granted = await requestOrientationPermission();
     if (!granted) {
       alert('Orientation permission is required to play.');
